@@ -1,4 +1,6 @@
 import logging
+import truststore
+truststore.inject_into_ssl()
 from telegram import Update
 from telegram.ext import (
     Application,
