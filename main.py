@@ -1,6 +1,14 @@
 import logging
-import truststore
-truststore.inject_into_ssl()
+import warnings
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+try:
+    import truststore
+    truststore.inject_into_ssl()
+except Exception:
+    pass  # truststore optional — fall back to verify=False below
+
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -9,6 +17,7 @@ from telegram.ext import (
     CallbackQueryHandler,
     filters,
 )
+from telegram.request import HTTPXRequest
 import config
 from bot.commands import cmd_start, cmd_summary, cmd_list, cmd_delete
 from bot.handlers import handle_photo, handle_voice, handle_text, handle_callback_query
@@ -20,7 +29,19 @@ logging.basicConfig(
 
 
 def main() -> None:
-    app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).build()
+    # Build custom HTTPXRequest with SSL verification disabled.
+    # Required on machines with intercepting proxies that inject certificates
+    # not trusted by the default CA bundle.
+    _request = HTTPXRequest(httpx_kwargs={"verify": False})
+    _get_updates_request = HTTPXRequest(httpx_kwargs={"verify": False})
+
+    app = (
+        Application.builder()
+        .token(config.TELEGRAM_BOT_TOKEN)
+        .request(_request)
+        .get_updates_request(_get_updates_request)
+        .build()
+    )
 
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("summary", cmd_summary))
