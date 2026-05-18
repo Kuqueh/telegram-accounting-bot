@@ -1,4 +1,5 @@
 import io
+import logging
 from datetime import date
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -8,6 +9,8 @@ from ai.parser import parse_expense_text
 from sheets.client import SheetsClient
 from bot.keyboards import record_confirm_keyboard
 import config
+
+logger = logging.getLogger(__name__)
 
 
 def _make_client() -> SheetsClient:
@@ -37,6 +40,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     image_bytes = buf.getvalue()
 
     record = analyze_receipt(image_bytes)
+    logger.info("[handler] analyze_receipt result: %s", record)
     if record is None:
         await update.message.reply_text(
             "❌ 无法识别这张图片，请确保图片清晰，并重新发送。"
@@ -63,6 +67,7 @@ async def handle_voice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     audio_bytes = buf.getvalue()
 
     text = transcribe_voice(audio_bytes)
+    logger.info("[handler] transcribe_voice result: %r", text)
     if text is None:
         await update.message.reply_text("❌ 语音识别失败，请重试。")
         return
