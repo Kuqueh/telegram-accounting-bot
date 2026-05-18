@@ -5,3 +5,10 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 dist/
+credentials.json
+service_account.json
+*-credentials.json
+*service_account*.json
+*.log
+.DS_Store
+Thumbs.db
